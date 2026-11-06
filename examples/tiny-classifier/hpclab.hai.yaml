@@ -1,0 +1,60 @@
+# The same ablation on the Stanford HAI cluster (profiles/hai.yaml): a first real job that
+# exercises SSH, snapshot upload, sbatch, monitoring and result collection end to end.
+# The program is CPU-only, so it requests no GPU (HAIC runs CPU jobs on `hai` without --gres;
+# if your account is refused, set gpus: 1 and gpu_type: h100).
+# Your account/user come from your private overlay (~/.hpclab/clusters/hai.yaml).
+name: tiny-mixup-ablation-hai
+question: >-
+  Does mixup improve clean validation accuracy over plain cross-entropy for a small MLP
+  trained on labels with 10% symmetric noise (3 seeds, paired by seed)?
+cluster: hai
+tags: [example, ablation, first-job]
+
+code:
+  project_root: "."
+
+entrypoint:
+  argv: [python3, train.py, --method, "{method}", --seed, "{seed}", --out, "{output_dir}", --ckpt-dir, "{checkpoint_dir}"]
+
+runtime:
+  # train.py needs Python >= 3.8. If the compute nodes' python3 is older (check inside a job:
+  # `python3 --version`), point runtime.venv at a uv venv on scratch (profiles/hai.yaml, uv-scratch).
+  python: python3
+  setup: []
+  # runtime.guard (default true) only checks GPUs when the job requests some (gpus > 0).
+
+matrix:
+  method: [baseline, mixup]
+seeds: [1, 2, 3]
+
+resources:
+  partition: hai
+  gpus: 0
+  cpus: 2
+  mem: 4G
+  time: "00:10:00"
+
+outputs:
+  - {name: metrics, path: "{output_dir}/metrics.jsonl", role: metrics, format: hpclab.metrics/v1}
+  - {name: summary, path: "{output_dir}/metrics.json", role: metrics, format: hpclab.metrics/v1}
+  - {name: checkpoints, path: "{checkpoint_dir}", kind: dir, role: checkpoint, format: hpclab.checkpoint/v1, required: false}
+
+smoke:
+  argv_append: [--steps, "20"]
+  require_outputs: [metrics]
+
+budget:
+  gpu_hours: 1
+  max_parallel: 2
+
+evaluation:
+  evaluator_id: hpclab_metrics
+  output: metrics
+  config: {split: val}
+
+comparison:
+  treatment: [method]
+  baseline: {method: baseline}
+  metrics:
+    - {name: acc, higher_is_better: true, unit: fraction}
+    - {name: loss, higher_is_better: false, unit: nats}

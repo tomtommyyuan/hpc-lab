@@ -1,0 +1,17 @@
+Usage: squeue [OPTIONS]
+  -A, --account=account(s)        comma separated list of accounts
+                                  to view, default is all accounts
+  -a, --all                       display jobs in hidden partitions
+      --array-unique              display one unique pending job array
+                                  element per line
+      --federation                Report federated information if a member
+                                  of one
+  -h, --noheader                  no headers on output
+      --hide                      do not display jobs in hidden partitions
+  -i, --iterate=seconds           specify an interation period
+  -j, --job=job(s)                comma separated list of jobs IDs
+                                  to view, default is all
+      --json[=data_parser]        Produce JSON output
+      --local                     Report information only about jobs on the
+                                  local cluster. Overrides --federation.
+  -l, --long                      long report

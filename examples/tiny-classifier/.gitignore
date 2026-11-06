@@ -1,0 +1,6 @@
+# Local runs of train.py (hpclab's code snapshot excludes these as well).
+outputs/
+checkpoints/
+__pycache__/
+.mypy_cache/
+.ruff_cache/

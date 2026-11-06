@@ -1,0 +1,9 @@
+# The example runs on whatever python3 a cluster provides (3.8+), so lint it for 3.8
+# instead of the hpclab package's 3.12 (e.g. no zip(strict=...)).
+extend = "../../pyproject.toml"
+target-version = "py38"
+cache-dir = "../../.ruff_cache"   # keep the example directory clean (it is snapshotted as-is)
+
+[lint]
+# Seeded `random.Random` is used for reproducible ML data/initialization, not for secrets.
+extend-ignore = ["S311"]

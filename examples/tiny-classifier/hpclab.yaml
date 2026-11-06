@@ -1,0 +1,79 @@
+# ExperimentSpec for `experiment_prepare` (MCP) / `hpclab experiment prepare hpclab.yaml` (CLI).
+# One scientific question, a finite matrix, and everything needed to trace each number in the
+# final table back to code, config and job. Targets the local simulator (profiles/sim.yaml).
+name: tiny-mixup-ablation
+question: >-
+  Does mixup improve clean validation accuracy over plain cross-entropy for a small MLP
+  trained on labels with 10% symmetric noise (3 seeds, paired by seed)?
+cluster: sim
+tags: [example, ablation]
+
+code:
+  project_root: "."            # snapshotted (content-addressed) at prepare time; later edits never leak into queued jobs
+
+entrypoint:
+  # {method} and {seed} come from the matrix; {output_dir}/{checkpoint_dir} are resolved on the
+  # compute node to this attempt's directories. Resume is passed via $HPCLAB_RESUME_FROM.
+  argv: [python3, train.py, --method, "{method}", --seed, "{seed}", --out, "{output_dir}", --ckpt-dir, "{checkpoint_dir}"]
+
+runtime:
+  python: python3
+  setup: []                    # stdlib only: nothing to install or activate
+  # runtime.guard defaults to true: before the program starts, the wrapper checks that
+  # nvidia-smi sees the allocated GPU(s) (and, when torch is installed, that CUDA works on
+  # them) and fails fast (exit 3, HPCLAB_GUARD_FAILED:<check>) instead of burning GPU-hours.
+
+matrix:
+  method: [baseline, mixup]
+seeds: [1, 2, 3]               # 2 methods x 3 seeds = 6 runs
+
+resources:
+  partition: gpu
+  gpus: 1
+  gpu_type: a100
+  cpus: 2
+  mem: 4G
+  time: "00:10:00"             # budget reserves gpus x time; the job needs ~1 s
+
+outputs:
+  - name: metrics
+    path: "{output_dir}/metrics.jsonl"
+    role: metrics
+    format: hpclab.metrics/v1
+    required: true
+  - name: summary
+    path: "{output_dir}/metrics.json"
+    role: metrics
+    format: hpclab.metrics/v1
+    required: true
+  - name: checkpoints
+    path: "{checkpoint_dir}"
+    kind: dir
+    role: checkpoint
+    format: hpclab.checkpoint/v1
+    required: false
+
+smoke:                         # 20-step gate run; the matrix is dispatched only if it passes
+  argv_append: [--steps, "20"]
+  require_outputs: [metrics]
+
+budget:
+  gpu_hours: 5
+  max_parallel: 2
+
+evaluation:
+  evaluator_id: hpclab_metrics
+  evaluator_version: "1"
+  output: metrics
+  config:
+    split: val                 # the record marked final:true on the val split
+
+comparison:
+  treatment: [method]
+  baseline: {method: baseline}
+  invariants: [split, evaluator, dataset]
+  pair_by_seed: true
+  ci_level: 0.95
+  metrics:
+    - {name: acc, higher_is_better: true, unit: fraction}
+    - {name: loss, higher_is_better: false, unit: nats}

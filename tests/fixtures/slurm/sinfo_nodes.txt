@@ -1,0 +1,11 @@
+gpu-node-1␟gpu*␟up␟mixed␟7-00:00:00␟40/72/0/112␟2000000␟gpu:h100:8(S:0-1)␟gpu:h100:3(IDX:0-2)␟none
+gpu-node-2␟gpu*␟up␟drained␟7-00:00:00␟0/0/112/112␟2000000␟gpu:h100:8(S:0-1)␟gpu:h100:0(IDX:N/A)␟NFS client black hole
+gpu-node-3␟gpu*␟up␟allocated␟7-00:00:00␟112/0/0/112␟2000000␟gpu:h100:8(S:0-1)␟gpu:h100:5(IDX:0,2-5)␟none
+gpu-node-4␟gpu*␟up␟idle␟7-00:00:00␟0/112/0/112␟2000000␟gpu:h100:8(S:0-1)␟gpu:h100:0(IDX:N/A)␟none
+gpu-node-5␟gpu*␟up␟down*␟7-00:00:00␟0/0/112/112␟2000000␟gpu:h100:8(S:0-1)␟gpu:h100:0(IDX:N/A)␟Not responding
+gpu-node-8␟gpu*␟up␟draining␟7-00:00:00␟16/0/96/112␟2000000␟gpu:b200:8,shard:b200:32␟gpu:b200:2(IDX:0-1),shard:b200:0␟maintenance 10/1
+gpu-node-6␟scavenge␟up␟mixed␟14-00:00:00␟8/104/0/112␟2000000␟gpu:h200:8(S:0-1)␟gpu:h200:1(IDX:7)␟none
+gpu-node-8␟scavenge␟up␟draining␟14-00:00:00␟16/0/96/112␟2000000␟gpu:b200:8,shard:b200:32␟gpu:b200:2(IDX:0-1),shard:b200:0␟maintenance 10/1
+gpu-node-9␟scavenge␟up␟idle~␟14-00:00:00␟0/112/0/112␟2000000␟gpu:h200:8␟gpu:0␟none
+gpu-node-7␟interactive␟up␟mixed␟1-00:00:00␟8/104/0/112␟2000000␟gpu:8␟gpu:2(IDX:0-1)␟none
+cpu-01␟cpu␟up␟idle␟1-00:00:00␟0/64/0/64␟256000␟(null)␟(null)␟none

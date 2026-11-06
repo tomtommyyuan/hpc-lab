@@ -1,0 +1,45 @@
+# PRIVATE overlay template for the HAI cluster (profile: profiles/hai.yaml).
+#
+# Copy to $HPCLAB_HOME/clusters/hai.yaml (default ~/.hpclab/clusters/hai.yaml), replace every
+# <placeholder>, and keep it private: hpclab writes overlays with mode 0600 and refuses to load
+# one that still contains <placeholders>. Nothing in here is ever published or bundled.
+#
+# The overlay references your EXISTING SSH setup; it never stores passwords, Duo codes or
+# private keys. Tip: add a host alias to ~/.ssh/config, e.g.
+#   Host haic
+#     HostName haic.stanford.edu
+#     User <your-sunet-id>
+# and set ssh_host: haic below.
+cluster_id: hai
+
+# SSH destination: an alias from ~/.ssh/config or the host name.
+ssh_host: haic.stanford.edu
+
+# Your SUNet ID. hpclab verifies it against `id -un` on the cluster and only ever cancels jobs
+# owned by this user.
+user: <your-sunet-id>
+
+# Slurm account (every HAIC job needs one). List yours with:
+#   sacctmgr show user $USER withassoc format=user,account%20,qos%30
+account: <your-slurm-account>
+
+# QoS: leave null unless a submission is rejected for QoS; then set it from the command above.
+qos: null
+
+# Where hpclab keeps code snapshots and attempt directories. null = /hai/scratch/<user>/hpclab
+# (the profile's remote_root_template). Never point this at /hai/users (50G home quota).
+remote_root: null
+
+# Optional: default partition for your experiments (hai | hai-lo; hai-interactive is srun-only).
+default_partition: hai
+
+# Extra ssh -o options (no secrets), e.g. ["ServerAliveInterval=30"].
+ssh_options: []
+
+# For PI usage reports (`usage` views): Unix users of your lab on this cluster.
+lab_users: []
+
+# Notifications when runs finish/fail, e.g.
+#   - {kind: ntfy, target: "https://ntfy.sh/<your-private-topic>"}
+#   - {kind: desktop}
+notify: []

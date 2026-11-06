@@ -1,0 +1,3 @@
+4242.extern|0|00:00:00|cpu=00:00:00,energy=0,fs/disk=2012,mem=0,pages=0,vmem=0
+4242.batch|4194304K|01:02:03|cpu=01:02:03,energy=0,fs/disk=123456,mem=4G,pages=12,vmem=8G
+4242.0|12.5G|1-02:03:04.123|cpu=1-02:03:04,energy=0,fs/disk=0,mem=12.5G,pages=0,vmem=20G

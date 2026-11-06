@@ -1,0 +1,10 @@
+4242␟4242␟COMPLETED␟0:0␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790003700␟3600␟360␟gpu-node-3␟billing=8,cpu=8,gres/gpu:h100=1,gres/gpu=1,mem=64G,node=1␟/gpu/scratch/jdoe/a␟hl.mixup.abcd2345␟hpclab:abcd2345efgh␟sbatch --parsable /gpu/scratch/jdoe/hpclab/attempts/att_01/job.sbatch
+4243␟4243␟FAILED␟1:0␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790000160␟60␟360␟gpu-node-1␟billing=8,cpu=8,gres/gpu=2,mem=64G,node=1␟/gpu/scratch/jdoe/a␟bad-config␟␟sbatch job.sbatch
+4244␟4244␟CANCELLED by 12345␟0:0␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790000200␟100␟360␟gpu-node-1␟billing=8,cpu=8,gres/gpu=2,mem=64G,node=1␟/gpu/scratch/jdoe/a␟cancelled␟␟sbatch job.sbatch
+4245␟4245␟TIMEOUT␟0:0␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790003705␟3605␟60␟gpu-node-4␟billing=8,cpu=8,gres/gpu=1,mem=64G,node=1␟/gpu/scratch/jdoe/a␟too-slow␟␟sbatch job.sbatch
+4246␟4246␟OUT_OF_MEMORY␟0:125␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790000400␟300␟360␟gpu-node-4␟billing=8,cpu=8,gres/gpu=1,mem=64G,node=1␟/gpu/scratch/jdoe/a␟big-batch␟␟sbatch job.sbatch
+4247␟4247␟NODE_FAIL␟0:0␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790000700␟600␟360␟gpu-node-2␟billing=8,cpu=8,gres/gpu=1,mem=64G,node=1␟/gpu/scratch/jdoe/a␟nfs-victim␟␟sbatch job.sbatch
+4248␟4248␟PENDING␟0:0␟jdoe␟mylab␟gpu␟1790000500␟Unknown␟Unknown␟0␟1440␟None assigned␟␟/gpu/scratch/jdoe/w␟queued job␟␟sbatch --wrap "python a.py | tee log.txt"
+4249␟4249␟RUNNING␟0:0␟jdoe␟mylab␟scavenge␟1790000000␟1790000100␟Unknown␟120␟Partition_Limit␟gpu-node-6␟billing=16,cpu=16,gres/gpu:h200=2,mem=128G,node=1␟/gpu/scratch/jdoe/w␟long-run␟␟sbatch -p scavenge job.sbatch
+4300_3␟4303␟COMPLETED␟0:0␟jdoe␟mylab␟scavenge␟1790000300␟1790000400␟1790000900␟500␟1440␟gpu-node-9␟billing=4,cpu=4,gres/gpu=1,mem=32G,node=1␟/gpu/scratch/jdoe/arr␟sweep␟␟sbatch --array=0-9 sweep.sbatch
+4251␟4251␟FAILED␟0:11␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790000101␟1␟10␟gpu-node-1␟billing=1,cpu=1,mem=4G,node=1␟/gpu/scratch/jdoe/a␟segv␟␟sbatch job.sbatch

@@ -1,0 +1,6 @@
+4242␟RUNNING␟jdoe␟mylab␟gpu␟1790000000␟1790000100␟1790021700␟6:00:00␟1:23:45␟gpu-node-3␟0␟cpu=8,mem=64G,node=1,billing=8,gres/gpu=1,gres/gpu:h100=1␟/gpu/scratch/jdoe/hpclab/attempts/att_01␟hl.mixup-seed1.abcd2345␟hpclab:abcd2345efgh␟None
+4243␟PENDING␟jdoe␟mylab␟gpu␟1790000200␟1790100000␟1790186400␟1-00:00:00␟0:00␟␟0␟cpu=8,mem=64G,node=1,billing=8,gres/gpu=4␟/gpu/scratch/jdoe/run2␟train big | model␟(null)␟Resources
+4300_4␟RUNNING␟jdoe␟mylab␟scavenge␟1790000300␟1790000400␟1790086800␟1-00:00:00␟10:05␟gpu-node-[6,9]␟2␟cpu=16,mem=128G,node=2,billing=16,gres/gpu:h200=4␟/gpu/scratch/jdoe/arr␟sweep␟␟None
+4300_[5-9]␟PENDING␟jdoe␟mylab␟scavenge␟1790000300␟N/A␟N/A␟1-00:00:00␟0:00␟␟0␟cpu=16,mem=128G,node=2,billing=16,gres/gpu:h200=4␟/gpu/scratch/jdoe/arr␟sweep␟␟Priority
+4250␟COMPLETED␟jdoe␟mylab␟gpu␟1789990000␟1789990100␟1789993700␟2:00:00␟1:00:00␟gpu-node-1␟0␟cpu=4,mem=32G,node=1,billing=4␟/gpu/scratch/jdoe␟prep␟(null)␟None
+4251␟CANCELLED␟jdoe␟mylab␟gpu␟1789990000␟0␟1789990050␟30:00␟0:00␟␟0␟cpu=1,mem=4G,node=1,billing=1␟/gpu/scratch/jdoe␟oops␟(null)␟None

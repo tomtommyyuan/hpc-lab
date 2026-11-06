@@ -1,0 +1,211 @@
+# Stanford HAI Compute Cluster (HAIC) — public hpclab site profile.
+#
+# PUBLIC and shareable: site rules only. Your SUNet ID, Slurm account, QoS, SSH alias and
+# project paths belong in your PRIVATE overlay ($HPCLAB_HOME/clusters/hai.yaml, mode 0600;
+# template: profiles/overlays/hai.example.yaml). `hpclab` refuses to publish a profile that
+# fails `validate_profile_is_public`.
+#
+# Trust model: the public cluster page and hands-on operator notes disagree on node counts and
+# some limits. Time-varying facts (node inventory, driver version, quota behaviour) and problems
+# (bad nodes) are therefore recorded as `facts` / `known_issues` with provenance and an expiry,
+# never as permanent policy. Partition limits below come from operator notes (2026-08) and must be
+# confirmed by the live probe (`sinfo` / `scontrol show partition` / `sacctmgr`), which always
+# wins over this file.
+schema: hpclab.profile/v1
+cluster_id: hai
+display_name: Stanford HAI Compute Cluster (HAIC)
+scheduler: slurm
+transport: ssh
+login_host: haic.stanford.edu
+support_contact: hai-support
+
+default_partition: hai
+partitions:
+  hai:
+    default: true
+    max_time: 7-00:00:00
+    gpu_types: [h100, b200]
+    notes: >-
+      Main batch partition on HAI-owned nodes. The documented per-user limit (8 GPUs running +
+      8 queued; 16 per account) has been looser in practice, so per-user caps are not
+      hard-coded here: submit and let Slurm's limits decide (see fact gpu_limits).
+      CPU-only jobs: try without --gres first.
+  hai-interactive:
+    max_time: 1-00:00:00
+    interactive_only: true
+    max_gpus_per_job: 1
+    max_gpus_per_user: 1
+    notes: >-
+      Debug partition with the highest priority: one job with one GPU per user, meant for
+      `srun --pty`. GPU types available here are not recorded; probe with sinfo.
+  hai-lo:
+    max_time: 14-00:00:00
+    preemptible: true
+    gpu_types: [h100, h200, b200]
+    notes: >-
+      Scavenger partition that borrows every node, including nodes owned by other groups
+      (the H200 and some B200 machines are reachable only here). Jobs may be preempted at any
+      time: not for long or fragile jobs; use it only with frequent checkpoints and resume.
+      Often-idle H200s make it the best fallback when `hai` queues are long; H100 virtualenvs
+      run unchanged on H200 (both sm_90).
+
+storage:
+  home:
+    path: /hai/users/{user}
+    quota_hint: 50G
+    avoid_for: [code, datasets, outputs, checkpoints, venv, caches]
+    notes: Small quota. Keep only dotfiles and small configs here; everything else goes to scratch.
+  scratch:
+    path: /hai/scratch/{user}
+    quota_hint: 5T
+    notes: >-
+      Code, datasets, virtualenvs, checkpoints and caches. There is no dedicated data-transfer
+      node, so keep rsync/scp concurrency low.
+
+# Where hpclab keeps snapshots and attempt directories (expanded with the overlay's user).
+remote_root_template: "{scratch}/hpclab"
+
+policy:
+  login_node_compute: forbidden   # hard rule: no tests, data prep, embeddings or analysis on the head node
+  require_account: true           # every job needs --account (set it in your overlay)
+  require_qos: false              # operator notes call QoS mandatory, yet jobs without --qos were accepted; see notes
+  poll_min_interval_s: 30         # at most one squeue batch per 30 s per cluster
+  sacct_min_interval_s: 60
+  max_login_hash_bytes: 268435456 # larger files are hashed by a Slurm job, never on the login node
+  reconcile_window_s: 900
+  accounting_lag_s: 120
+  max_parallel_default: 4
+  submit_rate_per_min: 20
+
+runtime_recipes:
+  uv-scratch:
+    description: uv-managed virtualenv on scratch, with every package/model cache moved off the 50G home.
+    env:
+      UV_CACHE_DIR: "{scratch}/.cache/uv"
+      UV_PYTHON_INSTALL_DIR: "{scratch}/.local/share/uv/python"
+      PIP_CACHE_DIR: "{scratch}/.cache/pip"
+      HF_HOME: "{scratch}/.cache/huggingface"
+      TORCH_HOME: "{scratch}/.cache/torch"
+      TRITON_CACHE_DIR: "{scratch}/.cache/triton"
+      XDG_CACHE_HOME: "{scratch}/.cache"
+    notes: >-
+      No conda and no root on the cluster: Python comes from uv. Create the venv once on the
+      login node (downloads are fine there; compute nodes may have no internet), e.g.
+      `uv venv {scratch}/venvs/<project> --python 3.12`, then point the experiment's
+      runtime.venv at it. Keep the venv outside the project tree so code snapshots stay small.
+      Download models and datasets on the login node into HF_HOME on scratch.
+  torch-cu128:
+    description: PyTorch wheels built for CUDA 12.8, required by the HAIC driver on H100/H200 (sm_90) and B200 (sm_100).
+    notes: >-
+      The driver supports CUDA 12.8 (see fact driver_cuda). Default PyPI torch
+      wheels now target CUDA 13.0 and fail with "driver too old (found version 12080)"
+      (torch.cuda.is_available() is False). cu124 wheels lack sm_100 kernels, so they break
+      on B200. Install with
+      `uv pip install "torch>=2.7" --index-url https://download.pytorch.org/whl/cu128`,
+      which covers sm_90 and sm_100. Verify on a compute node only, e.g. inside a job:
+      `python -c "import torch; print(torch.cuda.is_available(), torch.version.cuda, torch.cuda.get_device_name(0))"`.
+
+gpu_arch:
+  h100: sm_90
+  h200: sm_90
+  b200: sm_100
+
+known_issues:
+  - key: node.haic-hgx-2.nfs_client_blackhole
+    severity: warning
+    observed_at: "2026-08-23T00:00:00Z"
+    expires_at: "2026-10-23T00:00:00Z"
+    source: operator playbook (incident of 2026-08-23); re-verify before renewing
+    value:
+      node: haic-hgx-2
+      symptoms:
+        - new jobs end in NODE_FAIL after ~10 minutes without even creating slurm-*.out
+        - running jobs still show R in squeue but their log mtime freezes (often while writing a large checkpoint; process in D state, scancel and NCCL watchdogs cannot kill it)
+        - cancelled jobs hang in CG
+        - ls/tail from the login node stay fast, i.e. the file server is healthy and only the node's NFS client is broken
+      recommendation: >-
+        Add --exclude=haic-hgx-2 to long jobs while this observation is active. To recover a
+        zombie run: cancel it, rename its output directory (the stuck process still holds the
+        old inodes and may write into it if it wakes up), resubmit the same command with the
+        exclude and resume from the last complete checkpoint, then report to hai-support with
+        the sacct NODE_FAIL line, the missing slurm-*.out and the mtime evidence.
+
+# Time-varying site facts with provenance. Consumers read them by key (experiment_prepare
+# compares torch's CUDA build with `driver_cuda`); cluster_inspect refreshes them. An expired
+# fact is treated as unknown, never as the current value.
+facts:
+  - key: driver_cuda
+    value: "12.8"
+    severity: info
+    observed_at: "2026-08-01T00:00:00Z"
+    expires_at: "2026-11-30T00:00:00Z"
+    source: >-
+      operator playbook, measured 2026-08 (month precision): NVIDIA 570-series driver whose
+      newest supported CUDA runtime is 12.8, so wheels built for a newer CUDA (e.g. PyPI's
+      default cu130) cannot use the GPUs (see runtime_recipes.torch-cu128)
+  - key: node_inventory
+    severity: info
+    observed_at: "2026-08-01T00:00:00Z"
+    expires_at: "2026-11-30T00:00:00Z"
+    source: operator playbook, measured 2026-08; the public page lists different counts
+    value:
+      - {nodes: "haic-hgx-[1-5]", gpus_per_node: 8, gpu_type: h100, partitions: [hai, hai-lo]}
+      - {nodes: haic-hgx-8, gpus_per_node: 8, gpu_type: b200, partitions: [hai, hai-lo], notes: 2-GPU NCCL verified}
+      - {nodes: "haic-hgx-[6,9]", gpus_per_node: 8, gpu_type: h200, partitions: [hai-lo], notes: owned by another group; 141 GB HBM; borrowable only}
+      - {nodes: haic-hgx-7, gpus_per_node: 8, gpu_type: b200, partitions: [hai-lo], notes: owned by another group; multi-GPU NCCL not verified}
+  - key: gpu_limits
+    severity: info
+    observed_at: "2026-08-01T00:00:00Z"
+    expires_at: "2026-11-30T00:00:00Z"
+    source: operator playbook, measured 2026-08
+    value:
+      documented: 8 GPUs running + 8 queued per user; 16 per account
+      observed: a single user ran 11 GPUs at once without rejection
+      advice: submit and wait if Slurm holds the job for a limit (e.g. QOSMaxGRESPerUser) instead of self-limiting
+
+sources:
+  - title: HAI Compute Cluster public page
+    url: https://www-dev.cs.stanford.edu/haic
+    retrieved_at: "2026-09-23"
+    notes: >-
+      Cited by the HPC Lab design review on 2026-09-23 (a re-fetch on 2026-09-27 failed TLS
+      verification). Its node counts and time limits disagree with the operator notes, so
+      neither is hard-coded as current fact: hpclab probes the live values.
+  - title: HAIC operator playbook (hands-on notes of HAIC users)
+    retrieved_at: "2026-09-27"
+    notes: >-
+      Measurements from 2026-08 (partitions, nodes, driver, NFS incident, submission and
+      cancellation practice). Personal identifiers were removed; they belong in overlays.
+  - title: Slurm sbatch documentation
+    url: https://slurm.schedmd.com/sbatch.html
+    retrieved_at: "2026-09-23"
+    notes: Dependency, signal and requeue semantics used by hpclab's wrapper.
+
+notes:
+  - >-
+    Login needs a SUNet ID plus Duo; off campus connect the Stanford VPN in full-tunnel mode
+    first. hpclab never automates Duo: open the SSH control connection once with the login
+    command hpclab prints (auth_required errors include it) and later calls reuse it.
+  - >-
+    QoS: the operator notes call --qos mandatory, but the site's QoS names are not recorded and
+    batch jobs with only -p hai were accepted. Before the first submission check
+    `sacctmgr show user $USER withassoc format=user,account%20,qos%30`; if a job is rejected
+    for QoS, set qos in your overlay.
+  - >-
+    Time limits: request estimate x 1.15 plus evaluation/checkpoint overhead. Jobs that were
+    sized "just enough" have been killed at 98% of training.
+  - >-
+    Node health: only idle/mixed nodes are usable; skip drain/down. Check with
+    `sinfo -p hai -O NodeHost:.14,StateLong:.16,Reason:.40`.
+  - >-
+    Never cancel a job by remembered job id: verify it first (hpclab re-verifies job id,
+    owner, job-name token and submit time before every scancel; for manual cancels inspect
+    `sacct -j <id> -X -n --format=SubmitLine%600`).
+  - >-
+    Never run two live jobs writing the same run name or output directory; double writes
+    corrupt results. hpclab's one-execution-claim-per-run rule enforces this for managed runs.
+  - >-
+    Judge hangs by evidence, not feel: log mtime, sacct state, nvidia-smi utilization on the
+    node. Evaluation heartbeats can pause ~3 minutes and checkpoint writes ~1 minute; wait 5
+    minutes before acting.
+  - The login node is fine for git, downloads and bounded metadata commands (squeue/sacct/sinfo); everything else runs through sbatch/srun.

@@ -1,0 +1,24 @@
+Configuration data as of 2026-09-27T10:00:00
+AccountingStorageBackupHost = (null)
+AccountingStorageEnforce = associations,limits,qos,safe
+AccountingStorageHost   = slurmdb
+AccountingStorageExternalHost = (null)
+AccountingStorageParameters = (null)
+AccountingStoragePort   = 6819
+AccountingStorageTRES   = cpu,mem,energy,node,billing,fs/disk,vmem,pages,gres/gpu
+AccountingStorageType   = accounting_storage/slurmdbd
+AccountingStorageUser   = N/A
+AccountingStoreFlags    = job_comment,job_script
+AcctGatherEnergyType    = (null)
+ClusterName             = cluster1
+EnforcePartLimits       = ALL
+KillWait                = 30 sec
+MinJobAge               = 300 sec
+PreemptMode             = REQUEUE
+PreemptType             = preempt/partition_prio
+SchedulerType           = sched/backfill
+SelectType              = select/cons_tres
+SLURM_VERSION           = 23.02.7
+
+Cgroup Support Configuration:
+AllowedRAMSpace         = 100.0%

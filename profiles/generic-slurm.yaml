@@ -1,0 +1,109 @@
+# Template for any Slurm site. Copy it, rename it after your cluster and edit:
+#
+#   cp profiles/generic-slurm.yaml ~/.hpclab/profiles/mycluster.yaml
+#   # then set cluster_id: mycluster (the file name must equal cluster_id)
+#
+# A profile is PUBLIC site knowledge that a whole lab can share: partitions, storage roles,
+# policies, environment recipes, known issues with an expiry, and where each fact came from.
+# Never put your username, Slurm account, QoS, tokens or e-mail here — those go in the
+# private overlay ($HPCLAB_HOME/clusters/<cluster_id>.yaml, mode 0600).
+#
+# Useful commands for filling it in (run on the login node; all are cheap metadata queries):
+#   scontrol show partition -o                  # MaxTime, Default, PreemptMode, allowed QOS
+#   sinfo -o "%P %l %G %D %T"                   # partitions, time limits, GRES, node states
+#   sacctmgr -n -P show assoc user=$USER format=account,partition,qos
+#   nvidia-smi / module avail cuda              # inside a job: driver + CUDA versions
+schema: hpclab.profile/v1
+cluster_id: generic-slurm
+display_name: Generic Slurm site (template)
+scheduler: slurm
+transport: ssh                    # ssh | local (hpclab runs on the login node itself) | sim
+login_host: login.cluster.example.edu   # public host name; your ~/.ssh/config alias goes in the overlay
+
+default_partition: gpu
+partitions:
+  gpu:
+    default: true
+    max_time: 2-00:00:00          # Slurm duration: D-HH:MM:SS or HH:MM:SS
+    gpu_types: [a100]             # names as they appear in GRES (gpu:<type>:<n>); empty = unknown
+    max_gpus_per_job: null        # null = not known; hpclab never invents limits
+    max_gpus_per_user: null
+    notes: Main GPU batch partition.
+  debug:
+    max_time: "01:00:00"
+    gpu_types: [a100]
+    interactive_only: false       # true if the site only allows srun/salloc here
+    max_gpus_per_user: 1
+    notes: Short, high-priority jobs. Good for smoke tests if batch jobs are allowed.
+  preempt:
+    max_time: 1-00:00:00
+    gpu_types: [a100]
+    preemptible: true             # hpclab requires checkpoint/resume support before using it for long runs
+    notes: Scavenger partition; jobs can be preempted at any time.
+
+storage:
+  home:
+    path: /home/{user}            # {user} is replaced by the remote user from your overlay
+    quota_hint: 20G
+    avoid_for: [datasets, outputs, checkpoints, venv, caches]
+  scratch:
+    path: /scratch/{user}
+    quota_hint: null
+    notes: Purge policy? Backups? Write it here so everyone knows.
+
+remote_root_template: "{scratch}/hpclab"   # may use {scratch} and {user}
+
+policy:
+  login_node_compute: forbidden   # forbidden | discouraged | allowed
+  require_account: true
+  require_qos: false
+  poll_min_interval_s: 30         # be gentle with slurmctld: at most one squeue batch per 30 s
+  sacct_min_interval_s: 60
+  max_login_hash_bytes: 268435456
+  reconcile_window_s: 900         # how long hpclab looks for a submission whose reply was lost
+  accounting_lag_s: 120           # typical delay before a finished job appears in sacct
+  max_parallel_default: 4
+  submit_rate_per_min: 20
+
+runtime_recipes:
+  venv-on-scratch:
+    description: Python virtualenv on scratch, caches off the home quota.
+    setup: []                     # bash lines run before your program, e.g. "module load cuda/12.4"
+    env:
+      PIP_CACHE_DIR: "{scratch}/.cache/pip"
+      HF_HOME: "{scratch}/.cache/huggingface"
+      XDG_CACHE_HOME: "{scratch}/.cache"
+    notes: Match the torch CUDA build to the node driver (nvidia-smi shows the maximum CUDA version).
+
+gpu_arch:                         # GRES type -> compute capability; used to catch wrong torch builds
+  a100: sm_80
+
+# Time-varying site facts, read by key. `driver_cuda` (the newest CUDA the node driver
+# supports, from nvidia-smi inside a job) lets experiment_prepare reject a torch build the
+# driver cannot run BEFORE a job waits in the queue. Always give expires_at; an expired fact
+# is treated as unknown.
+facts: []
+#  - key: driver_cuda
+#    value: "12.4"
+#    observed_at: "2026-01-15T00:00:00Z"
+#    expires_at: "2026-04-15T00:00:00Z"
+#    source: nvidia-smi on a gpu node, 2026-01-15
+
+# Time-limited problems with provenance, e.g. a flaky node. Always give expires_at: an observation
+# must be re-verified, never silently become permanent policy.
+known_issues: []
+#  - key: node.node042.flaky_ib
+#    severity: warning             # info | warning | critical
+#    observed_at: "2026-01-15T00:00:00Z"
+#    expires_at: "2026-02-15T00:00:00Z"
+#    source: support ticket 12345
+#    value: {node: node042, recommendation: "--exclude=node042 for multi-node jobs"}
+
+sources:                          # where each fact came from, and when
+  - title: Site user guide
+    url: https://hpc.example.edu/docs
+    retrieved_at: null
+    notes: Replace with your site's documentation and the date you read it.
+
+support_contact: null             # e.g. a support ticket system or role mailbox
+notes: []

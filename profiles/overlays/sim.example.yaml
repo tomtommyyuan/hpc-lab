@@ -1,0 +1,21 @@
+# PRIVATE overlay template for the local simulator (profile: profiles/sim.yaml).
+#
+# Copy to $HPCLAB_HOME/clusters/sim.yaml and replace the <placeholders>. The simulator's
+# scratch path ({sim_fs}/scratch/{user}) cannot be expanded by the resolver, so remote_root
+# must be set explicitly to a directory under the simulator root.
+cluster_id: sim
+
+# Your local Unix user name (`id -un`); simulated jobs are owned by it.
+user: <your-local-username>
+
+# One of the simulator's accounts: lab | other.
+account: lab
+
+# Simulator state directory. null = $HPCLAB_HOME/sim/sim
+sim_root: null
+
+# Absolute path, normally <sim_root>/fs/scratch/<user>/hpclab, e.g.
+#   /Users/alice/.hpclab/sim/sim/fs/scratch/alice/hpclab
+remote_root: <absolute-path-under-sim-root>/fs/scratch/<your-local-username>/hpclab
+
+default_partition: gpu

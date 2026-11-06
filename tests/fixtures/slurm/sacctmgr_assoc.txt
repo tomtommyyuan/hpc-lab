@@ -1,0 +1,3 @@
+cluster1|mylab|jdoe||normal,scavenge|normal
+cluster1|mylab|jdoe|interactive|interactive|interactive
+cluster1|mylab||||

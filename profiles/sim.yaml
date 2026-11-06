@@ -1,0 +1,75 @@
+# Local Slurm simulator — the offline twin of a GPU cluster.
+#
+# `transport: sim` runs the real SlurmScheduler code against fake sbatch/squeue/sacct/...
+# executables installed under the simulator root, with jobs executed as local processes. Use it
+# to learn hpclab, run the tiny-classifier example, develop project adapters and reproduce
+# failure scenarios (lost sbatch replies, preemption, OOM, accounting lag) without a cluster.
+#
+# Partitions and accounts mirror the simulator's defaults (hpclab.sim.config.SimConfig):
+# change both together.
+schema: hpclab.profile/v1
+cluster_id: sim
+display_name: Local Slurm simulator
+scheduler: slurm
+transport: sim
+login_host: null
+
+default_partition: gpu
+partitions:
+  gpu:
+    default: true
+    max_time: 2-00:00:00
+    gpu_types: [a100]
+    notes: 4 nodes x 4 A100 (simulated). The default batch partition.
+  interactive:
+    max_time: "04:00:00"
+    gpu_types: [a100]
+    max_gpus_per_user: 1
+    notes: 1 node x 2 A100 (simulated); at most one GPU per user, like a site debug partition.
+  scavenge:
+    max_time: 1-00:00:00
+    gpu_types: [h100]
+    preemptible: true
+    notes: 2 nodes x 8 H100 (simulated), preemptible. Use the preempt_next fault to rehearse checkpoint/resume.
+
+storage:
+  scratch:
+    # {sim_fs} is the simulator's fake shared filesystem (<sim_root>/fs). ResolvedCluster cannot
+    # expand it, so a sim overlay always sets remote_root explicitly
+    # (see profiles/overlays/sim.example.yaml).
+    path: "{sim_fs}/scratch/{user}"
+    shared_fs: true
+    notes: The "remote" filesystem is the local disk under the simulator root.
+
+remote_root_template: "{scratch}/hpclab"
+
+policy:
+  login_node_compute: forbidden   # keep real-site semantics even though the "login node" is your laptop
+  require_account: true           # the simulator accepts accounts `lab` and `other`
+  require_qos: false
+  poll_min_interval_s: 1          # everything is local, polling is cheap
+  sacct_min_interval_s: 1
+  reconcile_window_s: 120
+  accounting_lag_s: 5
+  max_parallel_default: 4
+  submit_rate_per_min: 120
+
+runtime_recipes:
+  system-python:
+    description: Use the local python3 as-is; stdlib-only examples need no setup.
+    notes: For projects with dependencies, point runtime.venv at a local virtualenv.
+
+gpu_arch:
+  a100: sm_80
+  h100: sm_90
+
+known_issues: []
+
+sources:
+  - title: hpclab simulator defaults (hpclab.sim.config.SimConfig)
+    retrieved_at: "2026-09-27"
+    notes: Kept in sync by tests; the simulator is the source of truth for this profile.
+
+notes:
+  - Simulated GPUs are bookkeeping only; programs run on the CPU and must not require CUDA.
+  - Faults are injected with `hpclab sim fault ...` or SimCluster.set_faults() (see the simulator docs).

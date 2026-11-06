@@ -1,0 +1,3 @@
+4242␟4242␟jdoe␟mylab␟gpu␟COMPLETED␟1790000000␟1790000100␟1790003700␟3600␟billing=8,cpu=8,gres/gpu=2,mem=64G,node=1␟train a
+4248␟4248␟alice␟mylab␟gpu␟PENDING␟1790000500␟Unknown␟Unknown␟0␟␟queued
+4300_3␟4303␟bob␟mylab␟scavenge␟CANCELLED by 999␟1790000300␟1790000400␟1790000900␟500␟billing=4,cpu=4,gres/gpu:h200=4,mem=32G,node=1␟sweep
